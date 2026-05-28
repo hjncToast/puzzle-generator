@@ -1,0 +1,20 @@
+target/
+
+# frontend
+app/node_modules/
+app/dist/
+
+# wasm build output
+crates/wasm/pkg/
+
+# editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# env files
+.env
+.env.local

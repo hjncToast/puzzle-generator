@@ -1,0 +1,63 @@
+1. Definition format
+Design the file format first, before writing any code. Everything else — the loader, the coordinate system, 
+the solver — is downstream of this decision. Get it expressive enough to handle orientation, piece types, and move restrictions. 
+Test it by writing definitions for a few puzzles by hand.
+
+2. Rust core: loader + sticker index assignment
+Parse the definition, assign integer indices to every sticker position, build the cycle lists. This is the 
+foundation everything else sits on. Validate it by printing the cycle representation and checking it matches 
+what you'd expect.
+
+3. Rust core: move application
+Apply moves via cycle lists to a raw sticker array. Write tests that apply a move 4 times and check you're back 
+to the start. Apply known algs and verify the result. This is your ground truth — everything built on top of it 
+inherits its correctness.
+
+4. Rust core: coordinate encoding + move tables
+Build permutation coordinates (Lehmer encoding) and their move tables by simulation over the sticker-level apply.
+ This is the performance-critical step. Validate by checking move tables are consistent with the sticker-level apply.
+
+5. Rust core: IDA solver*
+Build the solver using the move tables and pruning tables. No UI, just a function that takes a state and returns 
+a move sequence. Test on known cases with known optimal solutions.
+
+6. Rust core: case generator
+Backward BFS from goal state using the solver infrastructure. Outputs a case database.
+
+7. WASM bindings
+Wrap the core with wasm-bindgen. Keep the API surface minimal — just what the UI actually needs.
+
+8. Web frontend
+Build the UI, visualiser, and worker setup against the WASM API. By this point the hard problems are solved and
+ this is just product work.
+
+
+
+ puzzle-engine/
+  Cargo.toml              ← workspace root
+  crates/
+    core/                 ← pure Rust, no platform deps
+      Cargo.toml
+      src/
+    wasm/                 ← wasm-bindgen wrapper around core
+      Cargo.toml
+      src/
+  app/                    ← Vite + React/Svelte frontend
+    package.json
+    src/
+
+
+
+Great, so when it's time to deploy the web version and the native version, this structure won't stab me in the back?
+    
+Claude responded: No, this structure is specifically designed for exactly this split.
+When you deploy the web version, wasm-pack build runs on crates/wasm, produces a JS/WASM package, Vite bundles it with 
+the frontend, and you deploy the output to Vercel. The native crates are completely ignored.
+When you build the native version, Cargo builds crates/core and whatever native crate you add later directly to a 
+binary. The frontend and WASM crates are completely ignored.
+The workspace just means they share a build cache and dependency versions — it doesn't couple their outputs. 
+Each target produces a completely independent artifact from the same source.
+The only thing that could bite you later is if you accidentally let platform-specific dependencies leak into 
+crates/core. As long as core stays pure Rust with no OS or browser dependencies, it compiles to both targets 
+without changes. That's the discipline worth maintaining from the start — if you ever find yourself adding 
+something to core that's native-only or browser-only, that's a sign it belongs in a wrapper crate instead.

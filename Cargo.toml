@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/puzzle-core"]
+resolver = "2"
