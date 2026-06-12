@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod definitions;
+pub mod parser;
+pub mod state;
+pub mod moves;
+pub mod visualise;
+pub mod movetable;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use parser::{initialise_pieces, build_union_find, build_orbits, build_moves, parse_offset, build_puzzle};
+pub use parser::{PieceInfo, Orbit, Move, Cycle};
